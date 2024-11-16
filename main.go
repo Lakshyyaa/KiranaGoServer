@@ -9,32 +9,38 @@ import (
 )
 
 func init() {
-	filename := "StoreMasterAssignment.csv"
+	err := loadStoreMaster("StoreMasterAssignment.csv")
+	if err != nil {
+		log.Fatalf("Failed to load store master: %v", err)
+	}
+}
+
+func loadStoreMaster(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("Error loading store master:", err)
+		log.Println("err", err)
+		return err
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		log.Fatal("Error reading CSV:", err)
+		log.Println("err", err)
+		return err
 	}
-
 	for _, record := range records[1:] {
-		log.Println(record[2])
 		storeMaster[record[2]] = Store{
-			StoreID:   record[0],
+			AreaCode:  record[0],
 			StoreName: record[1],
-			AreaCode:  record[2],
+			StoreID:   record[2],
 		}
 	}
-
+	return nil
 }
 
 func main() {
-	fmt.Println("hello pls")
+	fmt.Println("starting the server")
 	r := Router()
 	fmt.Printf("listening at port 4000\n")
 
