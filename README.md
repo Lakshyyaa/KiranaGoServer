@@ -1,11 +1,11 @@
 # Kirana Club Backend assignment documentation
 
 
-## Description
+## Description:
 - This server processes jobs and images collected, calculating simulated dimensions with and GPU processing times.
-- It provides RESTful endpoints for job submission and status checking with request validation and checks like (storeId exists, jobId exists, request body format is correct)
+- It provides RESTful endpoints for job submission and status checking with request validation and checks like (storeId exists, jobId exists, request body format is correct, etc)
 - To handle multiple requests simultaneously, goroutines are utilized to handle concurrency and used locks to handle race conditions(mutex and wait groups)
-- add channels?
+- Each job status is committed and updated in real-time to have latest updates
 
 
 ## Assumptions:
@@ -20,11 +20,11 @@ data in the http responses, I decided to share the actual data. Sending blank wi
 changing struct definitions.
 
 
-## Development Environment
+## Development Environment:
 - **Operating System**: Windows 11 Home 64-bit
 - **Hardware**: AMD Ryzen 5 5500U
 - **IDE**: Visual Studio Code
-- **Language**: Go (latest stable version)
+- **Language**: Go 1.23.2
 - **Libraries**:
 - `gorilla/mux` for routing
 - `air-verse/air` for live-reloading
@@ -46,3 +46,12 @@ changing struct definitions.
   and updates the job status
 - the 2nd function for status checks job status and sends back a suitable response
 - all code that accesses critical section uses locks to handle race conditions and for goroutines wait groups are used
+
+
+## Improvements:
+- Currently using in-memory data structures/variables. One things that would help is have a persistent database to store data in
+- Currently gpu is simulated which simply logs to the console and in the end the job-status is committed as it is. If actually working with image data, to store it we could have a channel which reads data of each image from its goroutine(each image processing is done in a separate goroutine) and read from it and store image data where needed. This would be better than waiting for all images' processing to finish and then store them in the end like it would happen currently(wg.Wait() blocks committing the final job-status after image gpu simulation is done for all images of a request which could be 1000s in real-life)
+
+
+## Installation:
+- 

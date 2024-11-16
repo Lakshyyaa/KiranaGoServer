@@ -61,7 +61,7 @@ func imageSimulation(img string) error {
 	// Simulate processing time between 0.1 and 0.4 seconds
 	time.Sleep(time.Duration(rand.Intn(300)+100) * time.Millisecond)
 	log.Printf("Processed image: %s, Perimeter: %d", img, perimeter)
-	// Simulate random failures (10% chance) though not necessary
+	// Simulate random failures on download (10% chance) though not necessary
 	if rand.Float32() < 0.1 {
 		return fmt.Errorf("failed to process image")
 	}
