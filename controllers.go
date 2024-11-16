@@ -50,18 +50,61 @@ var jobCount = 0
 func submitJobHandler(w http.ResponseWriter, r *http.Request) {
 	var reqVar JobRequest
 	err := json.NewDecoder(r.Body).Decode(&reqVar)
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(JobResponseError{Error: "Invalid request format"})
 		return
 	}
+	// Check for missing or invalid fields
+	if reqVar.Count <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(JobResponseError{Error: "Count must be greater than 0"})
+		return
+	}
+
+	if len(reqVar.Visits) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(JobResponseError{Error: "Visits array is empty"})
+		return
+	}
+
+	// Validate each visit
+	for _, visit := range reqVar.Visits {
+		if visit.Store_ID == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(JobResponseError{Error: "Missing store_id"})
+			return
+		}
+
+		if len(visit.Image_URL) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(JobResponseError{Error: "Missing image_url"})
+			return
+		}
+
+		// Check each image URL in the array
+		for _, url := range visit.Image_URL {
+			if url == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(JobResponseError{Error: "Empty image URL "})
+				return
+			}
+		}
+
+		if visit.Visit_Time == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(JobResponseError{Error: "Missing visit_time"})
+			return
+		}
+	}
+
 	if reqVar.Count != len(reqVar.Visits) {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(JobResponseError{Error: "Count does not match number of visits"})
 		return
 	}
+
 	// adding lock on the critical section: jobCount
 	Statusmu.Lock()
 	jobCount++
@@ -73,7 +116,6 @@ func submitJobHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	Statusmu.Unlock()
 	go jobSimulation(reqVar, curJobId)
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(JobResponseOK{JobID: curJobId})
 }
@@ -91,7 +133,7 @@ func getJobInfoHandler(w http.ResponseWriter, r *http.Request) {
 	job, found := jobs[jobIDInt]
 	Statusmu.RUnlock()
 	if !found {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(struct{}{})
 		return
 	}

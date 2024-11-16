@@ -23,12 +23,14 @@ func init() {
 	}
 
 	for _, record := range records[1:] {
-		storeMaster[record[0]] = Store{
+		log.Println(record[2])
+		storeMaster[record[2]] = Store{
 			StoreID:   record[0],
 			StoreName: record[1],
 			AreaCode:  record[2],
 		}
 	}
+
 }
 
 func main() {

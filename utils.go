@@ -16,6 +16,7 @@ func jobSimulation(reqVar JobRequest, curJobId int) {
 		_, found := storeMaster[val.Store_ID]
 		if !found {
 			errorMu.Lock()
+			fmt.Printf("store id not found\n")
 			jobErrors = append(jobErrors, ErrorType{
 				Store_ID: val.Store_ID,
 				Error:    "store_id does not exists",
