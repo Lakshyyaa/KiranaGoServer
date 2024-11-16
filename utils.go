@@ -6,9 +6,13 @@ import (
 	"time"
 )
 
-func jobSimulation(reqVar JobRequest) {
+func jobSimulation(reqVar JobRequest, curJobId int) {
 	for _, val := range reqVar.Visits {
-		// need to check if store exists
+		_, found := storeMaster[val.Store_ID]
+		if !found {
+			log.Println("Invalid store ID: ", val.Store_ID)
+			continue
+		}
 		for _, img := range val.Image_URL {
 			go imageSimulation(img)
 		}

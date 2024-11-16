@@ -1,10 +1,37 @@
 package main
+// jobID created by self?
+// use db to not use in memory
 
 import (
+	"encoding/csv"
 	"fmt"
-	"net/http"
 	"log"
+	"net/http"
+	"os"
 )
+
+func init() {
+	filename := "StoreMasterAssignment.csv"
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal("Error loading store master:", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		log.Fatal("Error reading CSV:", err)
+	}
+
+	for _, record := range records[1:] {
+		storeMaster[record[0]] = Store{
+			StoreID:   record[0],
+			StoreName: record[1],
+			AreaCode:  record[2],
+		}
+	}
+}
 
 func main() {
 	fmt.Println("hello pls")
