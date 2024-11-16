@@ -1,6 +1,4 @@
 package main
-// jobID created by self?
-// use db to not use in memory
 
 import (
 	"encoding/csv"
@@ -36,6 +34,7 @@ func init() {
 func main() {
 	fmt.Println("hello pls")
 	r := Router()
+	fmt.Printf("listening at port 4000\n")
+
 	log.Fatal(http.ListenAndServe(":4000", r))
-	fmt.Printf("listening at port 4000")
 }

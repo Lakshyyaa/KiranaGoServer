@@ -2,9 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -35,13 +34,17 @@ type JobResponseOK struct {
 	JobID int `json:"job_id"`
 }
 
+type JobStateOK struct {
+	Status string `json:"status"`
+	Job_ID int    `json:"job_id"`
+}
 type JobResponseError struct {
 	Error string `json:"error"`
 }
 
 var jobs = make(map[int]*JobState)
 var storeMaster = make(map[string]Store)
-var mu sync.RWMutex
+var Statusmu sync.RWMutex
 var jobCount = 0
 
 func submitJobHandler(w http.ResponseWriter, r *http.Request) {
@@ -60,14 +63,15 @@ func submitJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// adding lock on the critical section: jobCount
-	mu.Lock()
+	Statusmu.Lock()
 	jobCount++
 	curJobId := jobCount
 	jobs[curJobId] = &JobState{
 		Status: "ongoing",
 		Job_ID: curJobId,
+		Error:  make([]ErrorType, 0),
 	}
-	mu.Unlock()
+	Statusmu.Unlock()
 	go jobSimulation(reqVar, curJobId)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -76,9 +80,31 @@ func submitJobHandler(w http.ResponseWriter, r *http.Request) {
 
 func getJobInfoHandler(w http.ResponseWriter, r *http.Request) {
 	jobID := r.URL.Query().Get("jobid")
-	if jobID == "" {
-		log.Println("No jobID")
+	w.Header().Set("Content-Type", "application/json")
+	jobIDInt, err := strconv.Atoi(jobID)
+	if jobID == "" || err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(struct{}{})
 		return
 	}
-	fmt.Println(jobID, "is ok")
+	Statusmu.RLock()
+	job, found := jobs[jobIDInt]
+	Statusmu.RUnlock()
+	if !found {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(struct{}{})
+		return
+	}
+	if len(job.Error) > 0 {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(job)
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(JobStateOK{
+			Status: job.Status,
+			Job_ID: jobIDInt,
+		})
+		return
+	}
 }
